@@ -18,6 +18,50 @@ npm install @nachos/dlp
 pnpm add @nachos/dlp
 ```
 
+## Development
+
+### Building
+```bash
+npm run build        # Build the project
+npm run dev          # Watch mode for development
+```
+
+### Testing
+```bash
+npm test             # Run tests
+npm run test:watch   # Watch mode
+npm run test:coverage # Coverage report
+```
+
+### Linting & Formatting
+```bash
+npm run lint         # Lint the code
+npm run format       # Format the code
+```
+
+### Publishing
+
+#### Version Bumping
+```bash
+npm run version:patch  # Bump patch version (0.0.1 -> 0.0.2)
+npm run version:minor  # Bump minor version (0.0.1 -> 0.1.0)
+npm run version:major  # Bump major version (0.0.1 -> 1.0.0)
+```
+
+#### Publishing to NPM
+```bash
+npm run publish:npm    # Publish to NPM (requires npm login)
+```
+
+#### Release (Version + Publish)
+```bash
+npm run release:patch  # Bump patch and publish
+npm run release:minor  # Bump minor and publish
+npm run release:major  # Bump major and publish
+```
+
+**Note:** Make sure you're logged in to npm (`npm login`) before publishing.
+
 ## Quick Start
 
 ```typescript
