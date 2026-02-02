@@ -1,0 +1,258 @@
+import type { PatternDefinition } from '../types.js'
+
+export const apiKeyPatterns: PatternDefinition[] = [
+  // GitHub
+  {
+    id: 'github-pat',
+    name: 'GitHub Personal Access Token',
+    description: 'GitHub Personal Access Token (classic or fine-grained)',
+    severity: 'critical',
+    pattern: /ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9]{22}_[A-Za-z0-9]{59}/g,
+    keywords: ['github', 'token', 'pat', 'personal', 'access'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'github-oauth',
+    name: 'GitHub OAuth Token',
+    description: 'GitHub OAuth access token',
+    severity: 'critical',
+    pattern: /gho_[A-Za-z0-9]{36}/g,
+    keywords: ['github', 'oauth', 'token'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'github-app-token',
+    name: 'GitHub App Token',
+    description: 'GitHub App installation or user-to-server token',
+    severity: 'critical',
+    pattern: /(?:ghu|ghs)_[A-Za-z0-9]{36}/g,
+    keywords: ['github', 'app', 'token', 'installation'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'github-refresh-token',
+    name: 'GitHub Refresh Token',
+    description: 'GitHub OAuth refresh token',
+    severity: 'critical',
+    pattern: /ghr_[A-Za-z0-9]{36}/g,
+    keywords: ['github', 'refresh', 'token'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+
+  // Stripe
+  {
+    id: 'stripe-secret-key',
+    name: 'Stripe Secret Key',
+    description: 'Stripe API secret key (live or test)',
+    severity: 'critical',
+    pattern: /sk_(?:live|test)_[A-Za-z0-9]{24,}/g,
+    keywords: ['stripe', 'secret', 'key', 'payment', 'api'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'stripe-publishable-key',
+    name: 'Stripe Publishable Key',
+    description: 'Stripe publishable API key',
+    severity: 'low',
+    pattern: /pk_(?:live|test)_[A-Za-z0-9]{24,}/g,
+    keywords: ['stripe', 'publishable', 'key', 'payment'],
+    validators: [],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'stripe-restricted-key',
+    name: 'Stripe Restricted Key',
+    description: 'Stripe restricted API key',
+    severity: 'high',
+    pattern: /rk_(?:live|test)_[A-Za-z0-9]{24,}/g,
+    keywords: ['stripe', 'restricted', 'key'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+
+  // Slack
+  {
+    id: 'slack-bot-token',
+    name: 'Slack Bot Token',
+    description: 'Slack Bot OAuth token',
+    severity: 'high',
+    pattern: /xoxb-[0-9]{10,13}-[0-9]{10,13}-[A-Za-z0-9]{24}/g,
+    keywords: ['slack', 'bot', 'token', 'xoxb'],
+    validators: [{ type: 'entropy', min: 3.5 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'slack-user-token',
+    name: 'Slack User Token',
+    description: 'Slack User OAuth token',
+    severity: 'high',
+    pattern: /xoxp-[0-9]{10,13}-[0-9]{10,13}-[0-9]{10,13}-[a-f0-9]{32}/g,
+    keywords: ['slack', 'user', 'token', 'xoxp'],
+    validators: [{ type: 'entropy', min: 3.5 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'slack-webhook',
+    name: 'Slack Webhook URL',
+    description: 'Slack incoming webhook URL',
+    severity: 'medium',
+    pattern: /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]{8,}\/B[A-Z0-9]{8,}\/[A-Za-z0-9]{24}/g,
+    keywords: ['slack', 'webhook', 'hooks'],
+    validators: [],
+    examples: { positive: [], negative: [] },
+  },
+
+  // Twilio
+  {
+    id: 'twilio-account-sid',
+    name: 'Twilio Account SID',
+    description: 'Twilio Account SID',
+    severity: 'medium',
+    pattern: /AC[a-f0-9]{32}/g,
+    keywords: ['twilio', 'account', 'sid'],
+    validators: [{ type: 'length', min: 34, max: 34 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'twilio-auth-token',
+    name: 'Twilio Auth Token',
+    description: 'Twilio authentication token',
+    severity: 'critical',
+    pattern: /(?<=twilio|auth.?token|TWILIO_AUTH_TOKEN)[^\w]*[a-f0-9]{32}/gi,
+    keywords: ['twilio', 'auth', 'token'],
+    validators: [{ type: 'entropy', min: 3.5 }],
+    examples: { positive: [], negative: [] },
+  },
+
+  // SendGrid
+  {
+    id: 'sendgrid-api-key',
+    name: 'SendGrid API Key',
+    description: 'SendGrid email API key',
+    severity: 'high',
+    pattern: /SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/g,
+    keywords: ['sendgrid', 'api', 'key', 'email'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+
+  // Mailchimp
+  {
+    id: 'mailchimp-api-key',
+    name: 'Mailchimp API Key',
+    description: 'Mailchimp API key',
+    severity: 'high',
+    pattern: /[a-f0-9]{32}-us[0-9]{1,2}/g,
+    keywords: ['mailchimp', 'api', 'key', 'email'],
+    validators: [{ type: 'entropy', min: 3.5 }],
+    examples: { positive: [], negative: [] },
+  },
+
+  // Discord
+  {
+    id: 'discord-token',
+    name: 'Discord Bot Token',
+    description: 'Discord bot authentication token',
+    severity: 'high',
+    pattern: /[MN][A-Za-z\d]{23,}\.[\w-]{6}\.[\w-]{27,}/g,
+    keywords: ['discord', 'bot', 'token'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'discord-webhook',
+    name: 'Discord Webhook URL',
+    description: 'Discord incoming webhook URL',
+    severity: 'medium',
+    pattern: /https:\/\/discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+/g,
+    keywords: ['discord', 'webhook'],
+    validators: [],
+    examples: { positive: [], negative: [] },
+  },
+
+  // NPM
+  {
+    id: 'npm-token',
+    name: 'NPM Access Token',
+    description: 'NPM registry access token',
+    severity: 'high',
+    pattern: /npm_[A-Za-z0-9]{36}/g,
+    keywords: ['npm', 'token', 'registry', 'node'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+
+  // PyPI
+  {
+    id: 'pypi-token',
+    name: 'PyPI API Token',
+    description: 'Python Package Index API token',
+    severity: 'high',
+    pattern: /pypi-AgEIcHlwaS5vcmc[A-Za-z0-9_-]{50,}/g,
+    keywords: ['pypi', 'token', 'python', 'pip'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+
+  // Heroku
+  {
+    id: 'heroku-api-key',
+    name: 'Heroku API Key',
+    description: 'Heroku platform API key',
+    severity: 'high',
+    pattern: /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi,
+    keywords: ['heroku', 'api', 'key'],
+    validators: [],
+    falsePositives: [/[0]{8}-[0]{4}-[0]{4}-[0]{4}-[0]{12}/],
+    examples: { positive: [], negative: [] },
+  },
+
+  // Datadog
+  {
+    id: 'datadog-api-key',
+    name: 'Datadog API Key',
+    description: 'Datadog monitoring API key',
+    severity: 'high',
+    pattern: /(?<=datadog|dd.?api)[^\w]*[a-f0-9]{32}/gi,
+    keywords: ['datadog', 'api', 'key', 'monitoring'],
+    validators: [{ type: 'entropy', min: 3.5 }],
+    examples: { positive: [], negative: [] },
+  },
+
+  // Generic API patterns
+  {
+    id: 'bearer-token',
+    name: 'Bearer Token',
+    description: 'HTTP Authorization Bearer token',
+    severity: 'high',
+    pattern: /Bearer\s+[A-Za-z0-9_-]{20,}/gi,
+    keywords: ['bearer', 'authorization', 'token', 'auth'],
+    validators: [{ type: 'entropy', min: 3.5 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'basic-auth',
+    name: 'Basic Auth Credentials',
+    description: 'HTTP Basic Authentication header',
+    severity: 'high',
+    pattern: /Basic\s+[A-Za-z0-9+/=]{10,}/gi,
+    keywords: ['basic', 'authorization', 'auth', 'credentials'],
+    validators: [{ type: 'entropy', min: 3.0 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'jwt-token',
+    name: 'JWT Token',
+    description: 'JSON Web Token',
+    severity: 'high',
+    pattern: /eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*/g,
+    keywords: ['jwt', 'token', 'json', 'web'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+]
