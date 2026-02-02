@@ -226,16 +226,9 @@ export function exportPatternsToYAML(patterns: PatternDefinition[]): string {
       .join('\n')
   }
 
-  const formatPattern = (p: {
-    id: string
-    name: string
-    description?: string
-    severity: 'critical' | 'high' | 'medium' | 'low'
-    pattern: string
-    flags: string
-    keywords?: string[]
-    validators?: Array<{ type: string; min?: number; max?: number; algorithm?: string }>
-  }): string => {
+  type YamlPatternExport = (typeof yamlPatterns)[number]
+
+  const formatPattern = (p: YamlPatternExport): string => {
     const keywordsLine =
       p.keywords && p.keywords.length > 0 ? `\n    keywords: [${p.keywords.join(', ')}]` : ''
     const validatorsBlock =

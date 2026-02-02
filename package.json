@@ -1,6 +1,6 @@
 {
   "name": "@nacho-labs/nachos-dlp",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "TypeScript DLP scanning library for detecting secrets and sensitive data",
   "type": "module",
   "main": "./dist/index.js",

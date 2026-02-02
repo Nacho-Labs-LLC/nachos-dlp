@@ -195,7 +195,21 @@ export const piiPatterns: PatternDefinition[] = [
         fn: (match: string) => {
           // ABA routing number checksum
           const d = match.split('').map(Number)
-          const sum = 3 * (d[0] + d[3] + d[6]) + 7 * (d[1] + d[4] + d[7]) + (d[2] + d[5] + d[8])
+          if (d.length !== 9) {
+            return false
+          }
+          const [d0, d1, d2, d3, d4, d5, d6, d7, d8] = d as [
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+          ]
+          const sum = 3 * (d0 + d3 + d6) + 7 * (d1 + d4 + d7) + (d2 + d5 + d8)
           return sum % 10 === 0
         },
       },
