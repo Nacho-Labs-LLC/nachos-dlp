@@ -1,6 +1,6 @@
 {
   "name": "@nacho-labs/nachos-dlp",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "TypeScript DLP scanning library for detecting secrets and sensitive data",
   "type": "module",
   "main": "./dist/index.js",
@@ -47,6 +47,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nacho-labs-llc/nachos-dlp.git"
+  },
+  "dependencies": {
+    "yaml": "^2.6.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

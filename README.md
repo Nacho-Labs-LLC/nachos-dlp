@@ -1,4 +1,4 @@
-# @nachos/dlp
+# @nacho-labs/nachos-dlp
 
 TypeScript DLP (Data Loss Prevention) scanning library for detecting secrets, API keys, and sensitive data in text.
 
@@ -6,16 +6,16 @@ TypeScript DLP (Data Loss Prevention) scanning library for detecting secrets, AP
 
 - **Fast** - Pure TypeScript regex-based scanning
 - **Accurate** - Validators (entropy, Luhn, checksums) reduce false positives
-- **Comprehensive** - 50+ patterns for secrets, API keys, and PII
-- **Extensible** - Add custom patterns via code
+- **Comprehensive** - 52+ patterns for secrets, API keys, PII, and LLM provider keys
+- **Extensible** - Add custom patterns via code or YAML files
 - **Framework-agnostic** - Works in Node.js and edge runtimes
 
 ## Installation
 
 ```bash
-npm install @nachos/dlp
+npm install @nacho-labs/nachos-dlp
 # or
-pnpm add @nachos/dlp
+pnpm add @nacho-labs/nachos-dlp
 ```
 
 ## Development
@@ -65,7 +65,7 @@ npm run release:major  # Bump major and publish
 ## Quick Start
 
 ```typescript
-import { Scanner, redact } from '@nachos/dlp'
+import { Scanner, redact } from '@nacho-labs/nachos-dlp'
 
 const scanner = new Scanner()
 const text = `
@@ -93,6 +93,8 @@ if (findings.length > 0) {
 
 ### API Keys & Tokens
 - GitHub (PAT, OAuth, App, Refresh tokens)
+- OpenAI API Keys (sk-...)
+- Anthropic Claude API Keys (sk-ant-...)
 - Stripe (Secret, Publishable, Restricted keys)
 - Slack (Bot, User tokens, Webhooks)
 - Twilio, SendGrid, Mailchimp
@@ -118,7 +120,7 @@ if (findings.length > 0) {
 ## Configuration
 
 ```typescript
-import { Scanner } from '@nachos/dlp'
+import { Scanner } from '@nacho-labs/nachos-dlp'
 
 const scanner = new Scanner({
   // Include only specific patterns or categories
@@ -145,8 +147,47 @@ const scanner = new Scanner({
       { type: 'entropy', min: 4.0 },
       { type: 'length', min: 38, max: 38 }
     ]
-  }]
+  }],
+
+  // Load patterns from YAML files
+  customPatternFiles: ['./custom-patterns.yaml']
 })
+```
+
+### YAML Pattern Loading
+
+Load custom patterns from YAML files:
+
+```typescript
+import { loadPatternsFromYAML, loadPatternsFromYAMLString } from '@nacho-labs/nachos-dlp'
+
+// Load from file
+const patterns = loadPatternsFromYAML('./patterns.yaml')
+
+// Load from string
+const yaml = `
+patterns:
+  - id: custom-key
+    name: Custom API Key
+    severity: critical
+    pattern: "CUST-[A-Z0-9]{32}"
+    flags: g
+    keywords:
+      - custom
+      - api
+    validators:
+      - type: entropy
+        min: 4.0
+`
+const patterns = loadPatternsFromYAMLString(yaml)
+
+// Use with Scanner
+const scanner = new Scanner({
+  customPatternFiles: ['./custom-patterns.yaml']
+})
+```
+
+See [patterns.example.yaml](patterns.example.yaml) for pattern format.
 ```
 
 ## API Reference
@@ -210,7 +251,7 @@ import {
   validateLuhn,
   validateLength,
   validateChecksum
-} from '@nachos/dlp'
+} from '@nacho-labs/nachos-dlp'
 
 // Shannon entropy
 calculateEntropy('wJalrXUtnFEMI/K7MDENG')  // ~4.5

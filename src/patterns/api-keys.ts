@@ -224,6 +224,28 @@ export const apiKeyPatterns: PatternDefinition[] = [
     examples: { positive: [], negative: [] },
   },
 
+  // LLM Provider API Keys
+  {
+    id: 'openai-api-key',
+    name: 'OpenAI API Key',
+    description: 'OpenAI API key (GPT, DALL-E, Whisper, etc.)',
+    severity: 'critical',
+    pattern: /sk-[A-Za-z0-9]{48}/g,
+    keywords: ['openai', 'api', 'key', 'gpt', 'chatgpt', 'dalle'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: { positive: [], negative: [] },
+  },
+  {
+    id: 'anthropic-api-key',
+    name: 'Anthropic API Key',
+    description: 'Anthropic Claude API key',
+    severity: 'critical',
+    pattern: /sk-ant-[A-Za-z0-9_-]{95,}/g,
+    keywords: ['anthropic', 'claude', 'api', 'key'],
+    validators: [{ type: 'entropy', min: 4.5 }],
+    examples: { positive: [], negative: [] },
+  },
+
   // Generic API patterns
   {
     id: 'bearer-token',

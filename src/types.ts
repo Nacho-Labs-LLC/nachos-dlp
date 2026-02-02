@@ -22,6 +22,7 @@ export interface ScannerConfig {
   patterns?: string[]
   exclude?: string[]
   customPatterns?: PatternDefinition[]
+  customPatternFiles?: string[] // YAML files to load patterns from
   minConfidence?: number
   includeContext?: boolean
   contextLines?: number

@@ -1,0 +1,54 @@
+# Example DLP Pattern Configuration
+# Custom patterns can be defined in YAML and loaded dynamically
+
+patterns:
+  # Example: Custom internal API key pattern
+  - id: custom-internal-api-key
+    name: Internal API Key
+    description: Company internal API key format
+    severity: critical
+    pattern: "INT-[A-Z0-9]{32}"
+    flags: g
+    keywords:
+      - internal
+      - api
+      - key
+    validators:
+      - type: entropy
+        min: 4.0
+      - type: length
+        min: 36
+        max: 36
+
+  # Example: Custom database connection string
+  - id: custom-db-connection
+    name: Database Connection String
+    description: Internal database connection string
+    severity: critical
+    pattern: "(?:postgresql|mysql|mongodb)://[^\\s@]+:[^\\s@]+@[^\\s/]+/\\w+"
+    flags: gi
+    keywords:
+      - database
+      - connection
+      - postgres
+      - mysql
+      - mongodb
+    validators:
+      - type: entropy
+        min: 3.5
+
+  # Example: Custom employee ID
+  - id: custom-employee-id
+    name: Employee ID
+    description: Company employee identifier
+    severity: medium
+    pattern: "EMP-\\d{6}"
+    flags: g
+    keywords:
+      - employee
+      - emp
+      - staff
+    validators:
+      - type: length
+        min: 10
+        max: 10

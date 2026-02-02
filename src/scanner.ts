@@ -2,6 +2,7 @@ import type { ScannerConfig, Finding, PatternDefinition, PatternMatch } from './
 import { patterns as defaultPatterns, patternCategories } from './patterns/index.js'
 import { runValidators, calculateConfidence } from './validators/index.js'
 import { redactMatch } from './utils/redact.js'
+import { loadPatternsFromYAML } from './utils/yaml-loader.js'
 
 export interface ScanResult {
   findings: Finding[]
@@ -59,6 +60,19 @@ export class Scanner {
     // Add custom patterns
     if (this.config.customPatterns && this.config.customPatterns.length > 0) {
       patterns.push(...this.config.customPatterns)
+    }
+
+    // Load patterns from YAML files
+    if (this.config.customPatternFiles && this.config.customPatternFiles.length > 0) {
+      for (const file of this.config.customPatternFiles) {
+        try {
+          const yamlPatterns = loadPatternsFromYAML(file)
+          patterns.push(...yamlPatterns)
+        } catch (error) {
+          console.error(`Failed to load patterns from ${file}:`, error)
+          // Continue loading other files
+        }
+      }
     }
 
     // Deduplicate by ID

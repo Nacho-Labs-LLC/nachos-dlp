@@ -145,6 +145,16 @@ describe('API Key Pattern Detection', () => {
     expect(findings.some((f) => f.patternId === 'slack-webhook')).toBe(true)
   })
 
+  it('should detect OpenAI API key', () => {
+    const findings = scanner.scan('sk-1234567890abcdefghijklmnopqrstuvwxyz12345678901234')
+    expect(findings.some((f) => f.patternId === 'openai-api-key')).toBe(true)
+  })
+
+  it('should detect Anthropic API key', () => {
+    const findings = scanner.scan('sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijklmnopqrstuv')
+    expect(findings.some((f) => f.patternId === 'anthropic-api-key')).toBe(true)
+  })
+
   it('should detect SendGrid API key', () => {
     const findings = scanner.scan(
       'SG.1234567890abcdefghijkl.1234567890abcdefghijklmnopqrstuvwxyz1234567'
