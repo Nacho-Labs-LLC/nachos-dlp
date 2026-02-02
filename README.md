@@ -21,12 +21,14 @@ pnpm add @nacho-labs/nachos-dlp
 ## Development
 
 ### Building
+
 ```bash
 npm run build        # Build the project
 npm run dev          # Watch mode for development
 ```
 
 ### Testing
+
 ```bash
 npm test             # Run tests
 npm run test:watch   # Watch mode
@@ -34,6 +36,7 @@ npm run test:coverage # Coverage report
 ```
 
 ### Linting & Formatting
+
 ```bash
 npm run lint         # Lint the code
 npm run format       # Format the code
@@ -42,6 +45,7 @@ npm run format       # Format the code
 ### Publishing
 
 #### Version Bumping
+
 ```bash
 npm run version:patch  # Bump patch version (0.0.1 -> 0.0.2)
 npm run version:minor  # Bump minor version (0.0.1 -> 0.1.0)
@@ -49,11 +53,13 @@ npm run version:major  # Bump major version (0.0.1 -> 1.0.0)
 ```
 
 #### Publishing to NPM
+
 ```bash
 npm run publish:npm    # Publish to NPM (requires npm login)
 ```
 
 #### Release (Version + Publish)
+
 ```bash
 npm run release:patch  # Bump patch and publish
 npm run release:minor  # Bump minor and publish
@@ -87,11 +93,13 @@ if (findings.length > 0) {
 ## Supported Patterns
 
 ### Cloud Provider Credentials
+
 - AWS Access Key ID, Secret Access Key, Session Token, MWS Key
 - GCP API Key, Service Account, OAuth Token
 - Azure Storage Key, Connection String, SAS Token, Client Secret
 
 ### API Keys & Tokens
+
 - GitHub (PAT, OAuth, App, Refresh tokens)
 - OpenAI API Keys (sk-...)
 - Anthropic Claude API Keys (sk-ant-...)
@@ -103,6 +111,7 @@ if (findings.length > 0) {
 - Generic JWT, Bearer tokens, Basic Auth
 
 ### Private Keys & Certificates
+
 - RSA, EC, DSA private keys
 - OpenSSH, PuTTY private keys
 - PGP private key blocks
@@ -110,6 +119,7 @@ if (findings.length > 0) {
 - PKCS#12 references
 
 ### PII (Personally Identifiable Information)
+
 - US Social Security Numbers
 - Credit card numbers (with Luhn validation)
 - Email addresses, Phone numbers
@@ -124,7 +134,7 @@ import { Scanner } from '@nacho-labs/nachos-dlp'
 
 const scanner = new Scanner({
   // Include only specific patterns or categories
-  patterns: ['aws', 'api-keys'],  // Categories: 'aws', 'cloud', 'api-keys', 'private-keys', 'pii', 'secrets', 'all'
+  patterns: ['aws', 'api-keys'], // Categories: 'aws', 'cloud', 'api-keys', 'private-keys', 'pii', 'secrets', 'all'
 
   // Exclude specific pattern IDs
   exclude: ['email-address', 'ipv4-address'],
@@ -136,22 +146,34 @@ const scanner = new Scanner({
   includeContext: true,
   contextLines: 2,
 
+  // Suppress known false positives
+  allowlist: ['TEST-KEY-123', /example\d+/],
+
+  // Force include matches that must always be flagged
+  denylist: ['SUPER-SECRET-OVERRIDE'],
+
   // Add custom patterns
-  customPatterns: [{
-    id: 'my-api-key',
-    name: 'My API Key',
-    severity: 'critical',
-    pattern: /myapp_[a-z0-9]{32}/g,
-    keywords: ['myapp'],
-    validators: [
-      { type: 'entropy', min: 4.0 },
-      { type: 'length', min: 38, max: 38 }
-    ]
-  }],
+  customPatterns: [
+    {
+      id: 'my-api-key',
+      name: 'My API Key',
+      severity: 'critical',
+      pattern: /myapp_[a-z0-9]{32}/g,
+      keywords: ['myapp'],
+      validators: [
+        { type: 'entropy', min: 4.0 },
+        { type: 'length', min: 38, max: 38 },
+      ],
+    },
+  ],
 
   // Load patterns from YAML files
-  customPatternFiles: ['./custom-patterns.yaml']
+  customPatternFiles: ['./custom-patterns.yaml'],
 })
+
+// Notes:
+// - allowlist suppresses matches that are known to be safe.
+// - denylist forces inclusion even if validators/confidence would normally filter it out.
 ```
 
 ### YAML Pattern Loading
@@ -183,12 +205,16 @@ const patterns = loadPatternsFromYAMLString(yaml)
 
 // Use with Scanner
 const scanner = new Scanner({
-  customPatternFiles: ['./custom-patterns.yaml']
+  customPatternFiles: ['./custom-patterns.yaml'],
 })
 ```
 
 See [patterns.example.yaml](patterns.example.yaml) for pattern format.
-```
+
+### Security Notes for YAML Patterns
+
+- YAML aliases are disabled when loading patterns to avoid expansion attacks.
+- Regex patterns from YAML are checked for safety and rejected if they appear to be vulnerable to catastrophic backtracking.
 
 ## API Reference
 
@@ -201,11 +227,18 @@ const scanner = new Scanner(config?)
 // Scan text for secrets
 const findings = scanner.scan(text)
 
+// Scan with timeout or abort signal
+const controller = new AbortController()
+const findingsWithTimeout = scanner.scan(text, { timeoutMs: 2000, signal: controller.signal })
+
 // Scan with metadata (timing, pattern count)
 const result = scanner.scanWithMetadata(text)
 
 // Async scan for large texts
 const findings = await scanner.scanAsync(text)
+
+// Chunked scan for very large texts
+const chunked = scanner.scanChunks(text, { chunkSize: 200_000, overlap: 200 })
 
 // Quick check (returns boolean)
 const hasSecrets = scanner.quickCheck(text)
@@ -224,12 +257,12 @@ import { redact, redactMatch, summarizeFindings, formatReport } from '@nachos/dl
 
 // Redact all findings
 const safeText = redact(text, findings, {
-  replacement: '[REDACTED]',  // Default replacement
-  partial: true,               // Show prefix/suffix
-  showPrefix: 4,              // Characters to show at start
-  showSuffix: 4,              // Characters to show at end
-  maskFormat: 'fixed',        // 'fixed' or 'length'
-  maskChar: '*'               // Mask character for 'length' format
+  replacement: '[REDACTED]', // Default replacement
+  partial: true, // Show prefix/suffix
+  showPrefix: 4, // Characters to show at start
+  showSuffix: 4, // Characters to show at end
+  maskFormat: 'fixed', // 'fixed' or 'length'
+  maskChar: '*', // Mask character for 'length' format
 })
 
 // Redact single value
@@ -250,20 +283,20 @@ import {
   calculateEntropy,
   validateLuhn,
   validateLength,
-  validateChecksum
+  validateChecksum,
 } from '@nacho-labs/nachos-dlp'
 
 // Shannon entropy
-calculateEntropy('wJalrXUtnFEMI/K7MDENG')  // ~4.5
+calculateEntropy('wJalrXUtnFEMI/K7MDENG') // ~4.5
 
 // Luhn algorithm (credit cards)
-validateLuhn('4111111111111111')  // true
+validateLuhn('4111111111111111') // true
 
 // Length validation
-validateLength('secret', 5, 10)  // true
+validateLength('secret', 5, 10) // true
 
 // Checksum validation
-validateChecksum('4111111111111111', 'luhn')  // true
+validateChecksum('4111111111111111', 'luhn') // true
 ```
 
 ### Pattern Access
@@ -277,7 +310,7 @@ import {
   piiPatterns,
   getPatternById,
   getPatternsByCategory,
-  getPatternsBySeverity
+  getPatternsBySeverity,
 } from '@nachos/dlp'
 
 // Get specific pattern
@@ -299,6 +332,8 @@ interface Finding {
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
   match: string
   redacted: string
+  start: number
+  end: number
   line?: number
   column?: number
   context?: string

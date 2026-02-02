@@ -41,7 +41,8 @@ export const piiPatterns: PatternDefinition[] = [
     name: 'Credit Card Number',
     description: 'Credit card number (Visa, MasterCard, Amex, Discover)',
     severity: 'critical',
-    pattern: /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11})\b/g,
+    pattern:
+      /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11})\b/g,
     keywords: ['credit', 'card', 'payment', 'visa', 'mastercard', 'amex'],
     validators: [{ type: 'luhn' }],
     falsePositives: [/^0+$/, /1234567890/],
@@ -55,7 +56,8 @@ export const piiPatterns: PatternDefinition[] = [
     name: 'Formatted Credit Card Number',
     description: 'Credit card number with spaces or dashes',
     severity: 'critical',
-    pattern: /\b(?:4[0-9]{3}|5[1-5][0-9]{2}|3[47][0-9]{2}|6(?:011|5[0-9]{2}))[\s-]?[0-9]{4}[\s-]?[0-9]{4}[\s-]?[0-9]{4}\b/g,
+    pattern:
+      /\b(?:4[0-9]{3}|5[1-5][0-9]{2}|3[47][0-9]{2}|6(?:011|5[0-9]{2}))[\s-]?[0-9]{4}[\s-]?[0-9]{4}[\s-]?[0-9]{4}\b/g,
     keywords: ['credit', 'card', 'payment'],
     validators: [{ type: 'luhn' }],
     examples: {
@@ -115,7 +117,8 @@ export const piiPatterns: PatternDefinition[] = [
     name: 'IPv4 Address',
     description: 'IPv4 address (may indicate infrastructure)',
     severity: 'low',
-    pattern: /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g,
+    pattern:
+      /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g,
     keywords: ['ip', 'address', 'server', 'host'],
     validators: [
       {
@@ -209,7 +212,8 @@ export const piiPatterns: PatternDefinition[] = [
     name: 'Date of Birth',
     description: 'Potential date of birth in common formats',
     severity: 'medium',
-    pattern: /\b(?:dob|birth.?date|date.?of.?birth)\s*[:=]?\s*(?:\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})\b/gi,
+    pattern:
+      /\b(?:dob|birth.?date|date.?of.?birth)\s*[:=]?\s*(?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[/-]\d{1,2}[/-]\d{1,2})\b/gi,
     keywords: ['dob', 'birth', 'date', 'birthday'],
     validators: [],
     examples: {

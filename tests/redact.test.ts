@@ -57,7 +57,8 @@ describe('redactMatch', () => {
 
 describe('redact', () => {
   it('should redact all findings in text', () => {
-    const text = 'Key1: ghp_1234567890abcdefghijklmnopqrstuvwxyz and Key2: ghp_abcdefghijklmnopqrstuvwxyz123456'
+    const text =
+      'Key1: ghp_1234567890abcdefghijklmnopqrstuvwxyz and Key2: ghp_abcdefghijklmnopqrstuvwxyz123456'
     const findings: Finding[] = [
       {
         patternId: 'github-pat',
@@ -65,6 +66,8 @@ describe('redact', () => {
         severity: 'critical',
         match: 'ghp_1234567890abcdefghijklmnopqrstuvwxyz',
         redacted: '[REDACTED]',
+        start: 6,
+        end: 46,
         confidence: 0.9,
       },
       {
@@ -73,6 +76,8 @@ describe('redact', () => {
         severity: 'critical',
         match: 'ghp_abcdefghijklmnopqrstuvwxyz123456',
         redacted: '[REDACTED]',
+        start: 57,
+        end: 93,
         confidence: 0.9,
       },
     ]
@@ -96,6 +101,8 @@ describe('redact', () => {
         severity: 'critical',
         match: 'AKIAIOSFODNN7EXAMPLE',
         redacted: '[REDACTED]',
+        start: 8,
+        end: 28,
         confidence: 0.9,
       },
     ]
@@ -113,6 +120,8 @@ describe('redact', () => {
         severity: 'critical',
         match: 'ghp_1234567890abcdefghijklmnopqrstuvwxyz',
         redacted: '[REDACTED]',
+        start: 5,
+        end: 45,
         confidence: 0.9,
       },
     ]
@@ -132,6 +141,8 @@ describe('redactWithPatterns', () => {
         severity: 'critical',
         match: 'ghp_1234567890abcdefghijklmnopqrstuvwxyz',
         redacted: '[REDACTED]',
+        start: 5,
+        end: 45,
         confidence: 0.9,
       },
     ]
@@ -154,6 +165,8 @@ describe('redactWithPatterns', () => {
         severity: 'high',
         match: 'secret1',
         redacted: '[REDACTED]',
+        start: 7,
+        end: 14,
         confidence: 0.8,
       },
       {
@@ -162,6 +175,8 @@ describe('redactWithPatterns', () => {
         severity: 'high',
         match: 'secret2',
         redacted: '[REDACTED]',
+        start: 23,
+        end: 30,
         confidence: 0.8,
       },
     ]
@@ -185,6 +200,8 @@ describe('summarizeFindings', () => {
         severity: 'critical',
         match: 'test',
         redacted: '[REDACTED]',
+        start: 0,
+        end: 4,
         confidence: 0.9,
       },
       {
@@ -193,6 +210,8 @@ describe('summarizeFindings', () => {
         severity: 'critical',
         match: 'test',
         redacted: '[REDACTED]',
+        start: 0,
+        end: 4,
         confidence: 0.9,
       },
       {
@@ -201,6 +220,8 @@ describe('summarizeFindings', () => {
         severity: 'low',
         match: 'test',
         redacted: '[REDACTED]',
+        start: 0,
+        end: 4,
         confidence: 0.7,
       },
     ]
@@ -228,6 +249,8 @@ describe('formatReport', () => {
         severity: 'critical',
         match: 'ghp_test',
         redacted: '[REDACTED]',
+        start: 0,
+        end: 8,
         line: 10,
         column: 5,
         confidence: 0.95,
@@ -250,6 +273,8 @@ describe('formatReport', () => {
         severity: 'critical',
         match: 'ghp_test',
         redacted: '[REDACTED]',
+        start: 0,
+        end: 8,
         line: 2,
         column: 1,
         context: 'line before\ntoken: ghp_test\nline after',
@@ -271,6 +296,8 @@ describe('formatReport', () => {
         severity: 'critical',
         match: 'ghp_test',
         redacted: '[REDACTED]',
+        start: 0,
+        end: 8,
         line: 1,
         column: 1,
         confidence: 0.9,

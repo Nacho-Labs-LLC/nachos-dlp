@@ -66,7 +66,7 @@ describe('getPatternsByCategory', () => {
   it('should return secrets patterns (aws + api-keys + private-keys)', () => {
     const secretPatterns = getPatternsByCategory('secrets')
     expect(secretPatterns.length).toBe(
-      awsPatterns.length + apiKeyPatterns.length + privateKeyPatterns.length
+      awsPatterns.length + apiKeyPatterns.length + privateKeyPatterns.length,
     )
   })
 })
@@ -140,7 +140,7 @@ describe('API Key Pattern Detection', () => {
 
   it('should detect Slack webhook URL', () => {
     const findings = scanner.scan(
-      'https://hooks.slack.com/services/T12345678/B12345678/abcdefghijklmnopqrstuvwx'
+      'https://hooks.slack.com/services/T12345678/B12345678/abcdefghijklmnopqrstuvwx',
     )
     expect(findings.some((f) => f.patternId === 'slack-webhook')).toBe(true)
   })
@@ -151,13 +151,15 @@ describe('API Key Pattern Detection', () => {
   })
 
   it('should detect Anthropic API key', () => {
-    const findings = scanner.scan('sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijklmnopqrstuv')
+    const findings = scanner.scan(
+      'sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijklmnopqrstuv',
+    )
     expect(findings.some((f) => f.patternId === 'anthropic-api-key')).toBe(true)
   })
 
   it('should detect SendGrid API key', () => {
     const findings = scanner.scan(
-      'SG.1234567890abcdefghijkl.1234567890abcdefghijklmnopqrstuvwxyz1234567'
+      'SG.1234567890abcdefghijkl.1234567890abcdefghijklmnopqrstuvwxyz1234567',
     )
     expect(findings.some((f) => f.patternId === 'sendgrid-api-key')).toBe(true)
   })
@@ -318,7 +320,7 @@ describe('Pattern structure', () => {
 
   it('should have valid pattern (RegExp or string) for all patterns', () => {
     expect(
-      patterns.every((p) => p.pattern instanceof RegExp || typeof p.pattern === 'string')
+      patterns.every((p) => p.pattern instanceof RegExp || typeof p.pattern === 'string'),
     ).toBe(true)
   })
 })

@@ -1,9 +1,10 @@
 // Core scanner
-export { Scanner, type ScanResult } from './scanner.js'
+export { Scanner, ScanAbortedError, type ScanResult } from './scanner.js'
 
 // Types
 export type {
   ScannerConfig,
+  ScanOptions,
   Finding,
   Severity,
   PatternMatch,

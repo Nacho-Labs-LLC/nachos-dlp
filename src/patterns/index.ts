@@ -48,7 +48,7 @@ export function getPatternsByCategory(category: PatternCategory): PatternDefinit
 
 // Get patterns by severity
 export function getPatternsBySeverity(
-  severity: PatternDefinition['severity']
+  severity: PatternDefinition['severity'],
 ): PatternDefinition[] {
   return patterns.filter((p) => p.severity === severity)
 }

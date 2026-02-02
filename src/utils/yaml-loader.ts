@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { parse } from 'yaml'
+import safeRegex from 'safe-regex2'
 import type { PatternDefinition, Validator } from '../types.js'
 
 /**
@@ -39,7 +40,7 @@ interface YAMLPatternFile {
 export function loadPatternsFromYAML(filePath: string): PatternDefinition[] {
   try {
     const fileContent = readFileSync(filePath, 'utf-8')
-    const data = parse(fileContent) as YAMLPatternFile
+    const data = parse(fileContent, { maxAliasCount: 0 }) as YAMLPatternFile
 
     if (!data || !Array.isArray(data.patterns)) {
       throw new Error('YAML file must contain a "patterns" array')
@@ -62,7 +63,7 @@ export function loadPatternsFromYAML(filePath: string): PatternDefinition[] {
  */
 export function loadPatternsFromYAMLString(yamlString: string): PatternDefinition[] {
   try {
-    const data = parse(yamlString) as YAMLPatternFile
+    const data = parse(yamlString, { maxAliasCount: 0 }) as YAMLPatternFile
 
     if (!data || !Array.isArray(data.patterns)) {
       throw new Error('YAML must contain a "patterns" array')
@@ -88,9 +89,12 @@ function convertYAMLPattern(yamlPattern: YAMLPattern): PatternDefinition {
   if (!yamlPattern.name || typeof yamlPattern.name !== 'string') {
     throw new Error(`Pattern ${yamlPattern.id} must have a string "name" field`)
   }
-  if (!yamlPattern.severity || !['critical', 'high', 'medium', 'low'].includes(yamlPattern.severity)) {
+  if (
+    !yamlPattern.severity ||
+    !['critical', 'high', 'medium', 'low'].includes(yamlPattern.severity)
+  ) {
     throw new Error(
-      `Pattern ${yamlPattern.id} must have a severity of "critical", "high", "medium", or "low"`
+      `Pattern ${yamlPattern.id} must have a severity of "critical", "high", "medium", or "low"`,
     )
   }
   if (!yamlPattern.pattern || typeof yamlPattern.pattern !== 'string') {
@@ -104,8 +108,12 @@ function convertYAMLPattern(yamlPattern: YAMLPattern): PatternDefinition {
     regex = new RegExp(yamlPattern.pattern, flags)
   } catch (error) {
     throw new Error(
-      `Pattern ${yamlPattern.id} has invalid regex: ${error instanceof Error ? error.message : 'unknown error'}`
+      `Pattern ${yamlPattern.id} has invalid regex: ${error instanceof Error ? error.message : 'unknown error'}`,
     )
+  }
+
+  if (!safeRegex(regex)) {
+    throw new Error(`Pattern ${yamlPattern.id} has an unsafe regex (possible ReDoS risk)`)
   }
 
   // Convert validators (skip custom validators from YAML for security)
@@ -114,17 +122,43 @@ function convertYAMLPattern(yamlPattern: YAMLPattern): PatternDefinition {
     for (const v of yamlPattern.validators) {
       if (v.type === 'custom') {
         console.warn(
-          `Skipping custom validator for pattern ${yamlPattern.id}: custom validators cannot be loaded from YAML for security reasons`
+          `Skipping custom validator for pattern ${yamlPattern.id}: custom validators cannot be loaded from YAML for security reasons`,
         )
         continue
       }
 
-      validators.push({
-        type: v.type,
-        min: v.min,
-        max: v.max,
-        algorithm: v.algorithm,
-      } as Validator)
+      if (v.type === 'entropy') {
+        if (typeof v.min !== 'number') {
+          throw new Error(`Entropy validator for pattern ${yamlPattern.id} must include "min"`)
+        }
+        validators.push({ type: 'entropy', min: v.min })
+        continue
+      }
+
+      if (v.type === 'length') {
+        const lengthValidator: { type: 'length'; min?: number; max?: number } = {
+          type: 'length',
+        }
+        if (typeof v.min === 'number') lengthValidator.min = v.min
+        if (typeof v.max === 'number') lengthValidator.max = v.max
+        validators.push(lengthValidator)
+        continue
+      }
+
+      if (v.type === 'checksum') {
+        if (!v.algorithm || typeof v.algorithm !== 'string') {
+          throw new Error(
+            `Checksum validator for pattern ${yamlPattern.id} must include "algorithm"`,
+          )
+        }
+        validators.push({ type: 'checksum', algorithm: v.algorithm })
+        continue
+      }
+
+      if (v.type === 'luhn') {
+        validators.push({ type: 'luhn' })
+        continue
+      }
     }
   }
 
@@ -136,10 +170,12 @@ function convertYAMLPattern(yamlPattern: YAMLPattern): PatternDefinition {
     pattern: regex,
     keywords: yamlPattern.keywords || [],
     validators,
-    examples: yamlPattern.examples ? {
-      positive: yamlPattern.examples.positive || [],
-      negative: yamlPattern.examples.negative || []
-    } : { positive: [], negative: [] },
+    examples: yamlPattern.examples
+      ? {
+          positive: yamlPattern.examples.positive || [],
+          negative: yamlPattern.examples.negative || [],
+        }
+      : { positive: [], negative: [] },
   }
 }
 
@@ -162,7 +198,9 @@ export function exportPatternsToYAML(patterns: PatternDefinition[]): string {
       flags,
       keywords: p.keywords,
       validators: p.validators?.map((v) => {
-        const base: any = { type: v.type }
+        const base: { type: string; min?: number; max?: number; algorithm?: string } = {
+          type: v.type,
+        }
         if ('min' in v && v.min !== undefined) base.min = v.min
         if ('max' in v && v.max !== undefined) base.max = v.max
         if ('algorithm' in v && v.algorithm !== undefined) base.algorithm = v.algorithm
@@ -172,16 +210,50 @@ export function exportPatternsToYAML(patterns: PatternDefinition[]): string {
     }
   })
 
-  const data = { patterns: yamlPatterns }
-  
-  // Use yaml.stringify for clean output
-  return `# DLP Pattern Definitions
-# Generated: ${new Date().toISOString()}
-patterns:
-${yamlPatterns.map((p) => `  - id: ${p.id}
+  const formatValidator = (validator: {
+    type: string
+    min?: number
+    max?: number
+    algorithm?: string
+  }): string => {
+    return [
+      `      - type: ${validator.type}`,
+      validator.min !== undefined ? `        min: ${validator.min}` : null,
+      validator.max !== undefined ? `        max: ${validator.max}` : null,
+      validator.algorithm ? `        algorithm: ${validator.algorithm}` : null,
+    ]
+      .filter((line): line is string => Boolean(line))
+      .join('\n')
+  }
+
+  const formatPattern = (p: {
+    id: string
+    name: string
+    description?: string
+    severity: 'critical' | 'high' | 'medium' | 'low'
+    pattern: string
+    flags: string
+    keywords?: string[]
+    validators?: Array<{ type: string; min?: number; max?: number; algorithm?: string }>
+  }): string => {
+    const keywordsLine =
+      p.keywords && p.keywords.length > 0 ? `\n    keywords: [${p.keywords.join(', ')}]` : ''
+    const validatorsBlock =
+      p.validators && p.validators.length > 0
+        ? `\n    validators:\n${p.validators.map(formatValidator).join('\n')}`
+        : ''
+
+    return `  - id: ${p.id}
     name: ${p.name}
     description: ${p.description || ''}
     severity: ${p.severity}
     pattern: ${JSON.stringify(p.pattern)}
-    flags: ${p.flags}${p.keywords && p.keywords.length > 0 ? `\n    keywords: [${p.keywords.join(', ')}]` : ''}${p.validators && p.validators.length > 0 ? `\n    validators:${p.validators.map((v: any) => `\n      - type: ${v.type}${v.min !== undefined ? `\n        min: ${v.min}` : ''}${v.max !== undefined ? `\n        max: ${v.max}` : ''}${v.algorithm ? `\n        algorithm: ${v.algorithm}` : ''}`).join('')}` : ''}`).join('\n\n')}`
+    flags: ${p.flags}${keywordsLine}${validatorsBlock}`
+  }
+
+  // Use yaml.stringify for clean output
+  return `# DLP Pattern Definitions
+# Generated: ${new Date().toISOString()}
+patterns:
+${yamlPatterns.map(formatPattern).join('\n\n')}`
 }

@@ -52,11 +52,7 @@ export function redactMatch(value: string, options: RedactOptions = {}): string 
  * Redact all findings in a text
  * Replaces all matched sensitive data with redacted versions
  */
-export function redact(
-  text: string,
-  findings: Finding[],
-  options: RedactOptions = {}
-): string {
+export function redact(text: string, findings: Finding[], options: RedactOptions = {}): string {
   if (findings.length === 0) return text
 
   const opts = { ...DEFAULT_OPTIONS, ...options }
@@ -64,19 +60,19 @@ export function redact(
   // Sort findings by position (descending) to replace from end to start
   // This preserves indices as we make replacements
   const sortedFindings = [...findings].sort((a, b) => {
-    const posA = getMatchPosition(text, a.match)
-    const posB = getMatchPosition(text, b.match)
+    const posA = getFindingPosition(text, a)?.start ?? -1
+    const posB = getFindingPosition(text, b)?.start ?? -1
     return posB - posA
   })
 
   let result = text
 
   for (const finding of sortedFindings) {
-    const pos = getMatchPosition(result, finding.match)
-    if (pos === -1) continue
+    const posInfo = getFindingPosition(result, finding)
+    if (!posInfo) continue
 
     const redactedValue = redactMatch(finding.match, opts)
-    result = result.substring(0, pos) + redactedValue + result.substring(pos + finding.match.length)
+    result = result.substring(0, posInfo.start) + redactedValue + result.substring(posInfo.end)
   }
 
   return result
@@ -88,7 +84,7 @@ export function redact(
 export function redactWithPatterns(
   text: string,
   findings: Finding[],
-  options: RedactOptions = {}
+  options: RedactOptions = {},
 ): {
   redacted: string
   findings: Finding[]
@@ -103,8 +99,8 @@ export function redactWithPatterns(
 
   // Build replacement list
   const sortedFindings = [...findings].sort((a, b) => {
-    const posA = getMatchPosition(text, a.match)
-    const posB = getMatchPosition(text, b.match)
+    const posA = getFindingPosition(text, a)?.start ?? -1
+    const posB = getFindingPosition(text, b)?.start ?? -1
     return posA - posB
   })
 
@@ -112,8 +108,9 @@ export function redactWithPatterns(
   let offset = 0
 
   for (const finding of sortedFindings) {
-    const originalPos = getMatchPosition(text, finding.match)
-    if (originalPos === -1) continue
+    const posInfo = getFindingPosition(text, finding)
+    if (!posInfo) continue
+    const originalPos = posInfo.start
 
     const adjustedPos = originalPos + offset
     const redactedValue = redactMatch(finding.match, opts)
@@ -142,6 +139,16 @@ function getMatchPosition(text: string, match: string): number {
   return text.indexOf(match)
 }
 
+function getFindingPosition(text: string, finding: Finding): { start: number; end: number } | null {
+  if (Number.isFinite(finding.start) && Number.isFinite(finding.end)) {
+    return { start: finding.start, end: finding.end }
+  }
+
+  const start = getMatchPosition(text, finding.match)
+  if (start === -1) return null
+  return { start, end: start + finding.match.length }
+}
+
 /**
  * Create a redacted summary of findings
  */
@@ -155,7 +162,7 @@ export function summarizeFindings(findings: Finding[]): string {
       acc[f.severity] = (acc[f.severity] || 0) + 1
       return acc
     },
-    {} as Record<string, number>
+    {} as Record<string, number>,
   )
 
   const byPattern = findings.reduce(
@@ -163,7 +170,7 @@ export function summarizeFindings(findings: Finding[]): string {
       acc[f.patternName] = (acc[f.patternName] || 0) + 1
       return acc
     },
-    {} as Record<string, number>
+    {} as Record<string, number>,
   )
 
   const lines = [
@@ -184,7 +191,7 @@ export function summarizeFindings(findings: Finding[]): string {
  */
 export function formatReport(
   findings: Finding[],
-  options: { showContext?: boolean; showRedacted?: boolean } = {}
+  options: { showContext?: boolean; showRedacted?: boolean } = {},
 ): string {
   const { showContext = false, showRedacted = true } = options
 

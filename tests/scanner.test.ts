@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Scanner } from '../src/scanner.js'
+import { Scanner, ScanAbortedError } from '../src/scanner.js'
 import type { PatternDefinition } from '../src/types.js'
 
 describe('Scanner', () => {
@@ -122,7 +122,11 @@ after`
     it('should filter patterns by category', () => {
       const scanner = new Scanner({ patterns: ['aws'] })
       const patterns = scanner.getPatterns()
-      expect(patterns.every((p) => p.id.startsWith('aws') || p.id.includes('gcp') || p.id.includes('azure'))).toBe(true)
+      expect(
+        patterns.every(
+          (p) => p.id.startsWith('aws') || p.id.includes('gcp') || p.id.includes('azure'),
+        ),
+      ).toBe(true)
     })
 
     it('should exclude patterns', () => {
@@ -222,6 +226,84 @@ after`
       const findings = scanner.scan('test123456789')
       // High confidence threshold should filter most matches
       expect(findings.every((f) => f.confidence >= 0.9)).toBe(true)
+    })
+  })
+
+  describe('allowlist/denylist', () => {
+    it('should suppress allowlisted matches', () => {
+      const scanner = new Scanner({ patterns: ['github-pat'] })
+      const text = 'token: ghp_1234567890abcdefghijklmnopqrstuvwxyz'
+      const findings = scanner.scan(text, {
+        allowlist: ['ghp_1234567890abcdefghijklmnopqrstuvwxyz'],
+      })
+      expect(findings.length).toBe(0)
+    })
+
+    it('should force include denylisted matches even when validators fail', () => {
+      const scanner = new Scanner({
+        patterns: [],
+        customPatterns: [
+          {
+            id: 'forced',
+            name: 'Forced',
+            severity: 'high',
+            pattern: /SECRET/g,
+            validators: [{ type: 'length', min: 100 }],
+          },
+        ],
+      })
+
+      const findings = scanner.scan('value=SECRET', { denylist: ['SECRET'] })
+      expect(findings.length).toBe(1)
+      expect(findings[0].patternId).toBe('forced')
+    })
+  })
+
+  describe('abort/timeout', () => {
+    it('should abort when signal is already aborted', () => {
+      const scanner = new Scanner({ patterns: ['github-pat'] })
+      const controller = new AbortController()
+      controller.abort()
+
+      expect(() =>
+        scanner.scan('token: ghp_1234567890abcdefghijklmnopqrstuvwxyz', {
+          signal: controller.signal,
+        }),
+      ).toThrow(ScanAbortedError)
+    })
+
+    it('should timeout when deadline is exceeded', () => {
+      const scanner = new Scanner({ patterns: ['github-pat'] })
+      expect(() =>
+        scanner.scan('token: ghp_1234567890abcdefghijklmnopqrstuvwxyz', {
+          timeoutMs: -1,
+        }),
+      ).toThrow(ScanAbortedError)
+    })
+  })
+
+  describe('scanChunks', () => {
+    it('should find matches across chunks without duplicates', () => {
+      const scanner = new Scanner({
+        patterns: [],
+        customPatterns: [
+          {
+            id: 'chunk-token',
+            name: 'Chunk Token',
+            severity: 'high',
+            pattern: /TOKEN\d{2}/g,
+          },
+        ],
+      })
+
+      const token1 = 'TOKEN01'
+      const token2 = 'TOKEN02'
+      const text = `start ${token1} ${'x'.repeat(30)} ${token2} end`
+
+      const findings = scanner.scanChunks(text, { chunkSize: 20, overlap: 5 })
+      expect(findings.length).toBe(2)
+      expect(findings.some((f) => f.match === token1)).toBe(true)
+      expect(findings.some((f) => f.match === token2)).toBe(true)
     })
   })
 })

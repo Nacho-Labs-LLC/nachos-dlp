@@ -38,7 +38,9 @@ export function validateLuhn(numStr: string): boolean {
 
   // Process from right to left
   for (let i = digits.length - 1; i >= 0; i--) {
-    let digit = parseInt(digits[i], 10)
+    const digitChar = digits[i]
+    if (!digitChar) return false
+    let digit = parseInt(digitChar, 10)
 
     if (isEven) {
       digit *= 2
@@ -80,13 +82,17 @@ export function validateChecksum(str: string, algorithm: string): boolean {
       let sum = 0
       let weight = 2
       for (let i = digits.length - 2; i >= 0; i--) {
-        sum += parseInt(digits[i], 10) * weight
+        const digitChar = digits[i]
+        if (!digitChar) return false
+        sum += parseInt(digitChar, 10) * weight
         weight++
         if (weight > 7) weight = 2
       }
 
       const checkDigit = (11 - (sum % 11)) % 11
-      const lastDigit = parseInt(digits[digits.length - 1], 10)
+      const lastDigitChar = digits[digits.length - 1]
+      if (!lastDigitChar) return false
+      const lastDigit = parseInt(lastDigitChar, 10)
       return checkDigit === lastDigit || (checkDigit === 10 && lastDigit === 0)
     }
 
@@ -136,7 +142,7 @@ export function calculateConfidence(
   match: string,
   validators: Validator[],
   keywords?: string[],
-  context?: string
+  context?: string,
 ): number {
   let confidence = 0.5 // Base confidence
 

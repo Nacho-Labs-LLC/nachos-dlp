@@ -6,6 +6,8 @@ export interface Finding {
   severity: Severity
   match: string
   redacted: string
+  start: number
+  end: number
   line?: number
   column?: number
   context?: string
@@ -26,6 +28,17 @@ export interface ScannerConfig {
   minConfidence?: number
   includeContext?: boolean
   contextLines?: number
+  allowlist?: Array<string | RegExp>
+  denylist?: Array<string | RegExp>
+}
+
+export interface ScanOptions {
+  signal?: AbortSignal
+  timeoutMs?: number
+  allowlist?: Array<string | RegExp>
+  denylist?: Array<string | RegExp>
+  chunkSize?: number
+  overlap?: number
 }
 
 export interface PatternDefinition {

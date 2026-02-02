@@ -101,7 +101,8 @@ export const apiKeyPatterns: PatternDefinition[] = [
     name: 'Slack Webhook URL',
     description: 'Slack incoming webhook URL',
     severity: 'medium',
-    pattern: /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]{8,}\/B[A-Z0-9]{8,}\/[A-Za-z0-9]{24}/g,
+    pattern:
+      /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]{8,}\/B[A-Z0-9]{8,}\/[A-Za-z0-9]{24}/g,
     keywords: ['slack', 'webhook', 'hooks'],
     validators: [],
     examples: { positive: [], negative: [] },

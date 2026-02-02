@@ -6,7 +6,8 @@ export const awsPatterns: PatternDefinition[] = [
     name: 'AWS Access Key ID',
     description: 'AWS Access Key ID used for programmatic access',
     severity: 'critical',
-    pattern: /(?<![A-Z0-9])(A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|APKA|AROA|ASCA|ASIA)[A-Z0-9]{16}(?![A-Z0-9])/g,
+    pattern:
+      /(?<![A-Z0-9])(A3T[A-Z0-9]|AKIA|ABIA|ACCA|AGPA|AIDA|AIPA|ANPA|ANVA|APKA|AROA|ASCA|ASIA)[A-Z0-9]{16}(?![A-Z0-9])/g,
     keywords: ['aws', 'amazon', 'access', 'key', 'akia', 'credential'],
     validators: [
       { type: 'length', min: 20, max: 20 },

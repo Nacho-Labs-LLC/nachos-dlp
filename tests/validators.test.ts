@@ -175,7 +175,7 @@ describe('calculateConfidence', () => {
       'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
       [],
       undefined,
-      undefined
+      undefined,
     )
     expect(highEntropyConfidence).toBeGreaterThan(lowEntropyConfidence)
   })
@@ -186,7 +186,7 @@ describe('calculateConfidence', () => {
       'secret123',
       [],
       ['aws', 'secret', 'key'],
-      'this is my aws secret key'
+      'this is my aws secret key',
     )
     expect(withKeywords).toBeGreaterThan(withoutKeywords)
   })
@@ -196,7 +196,7 @@ describe('calculateConfidence', () => {
       'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
       [],
       ['aws', 'secret', 'key', 'credential', 'access'],
-      'aws secret key credential access token'
+      'aws secret key credential access token',
     )
     expect(confidence).toBeLessThanOrEqual(1)
     expect(confidence).toBeGreaterThanOrEqual(0)

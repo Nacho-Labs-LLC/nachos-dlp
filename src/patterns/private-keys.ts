@@ -11,7 +11,9 @@ export const privateKeyPatterns: PatternDefinition[] = [
     keywords: ['rsa', 'private', 'key', 'pem', 'certificate'],
     validators: [],
     examples: {
-      positive: ['-----BEGIN RSA PRIVATE KEY-----\nMIIE...base64...\n-----END RSA PRIVATE KEY-----'],
+      positive: [
+        '-----BEGIN RSA PRIVATE KEY-----\nMIIE...base64...\n-----END RSA PRIVATE KEY-----',
+      ],
       negative: [],
     },
   },
@@ -155,7 +157,8 @@ export const privateKeyPatterns: PatternDefinition[] = [
     name: 'SSH Private Key Reference',
     description: 'Reference to SSH private key file',
     severity: 'medium',
-    pattern: /(?:identity|identity_file|identityfile|ssh.?key|private.?key)\s*[:=]\s*["']?[^\s"']+["']?/gi,
+    pattern:
+      /(?:identity|identity_file|identityfile|ssh.?key|private.?key)\s*[:=]\s*["']?[^\s"']+["']?/gi,
     keywords: ['ssh', 'identity', 'key', 'private'],
     validators: [],
     examples: {

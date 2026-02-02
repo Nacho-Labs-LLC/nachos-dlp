@@ -1,4 +1,10 @@
-import type { ScannerConfig, Finding, PatternDefinition, PatternMatch } from './types.js'
+import type {
+  ScannerConfig,
+  Finding,
+  PatternDefinition,
+  PatternMatch,
+  ScanOptions,
+} from './types.js'
 import { patterns as defaultPatterns, patternCategories } from './patterns/index.js'
 import { runValidators, calculateConfidence } from './validators/index.js'
 import { redactMatch } from './utils/redact.js'
@@ -9,6 +15,13 @@ export interface ScanResult {
   scannedLength: number
   patternsChecked: number
   scanTimeMs: number
+}
+
+export class ScanAbortedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ScanAbortedError'
+  }
 }
 
 export class Scanner {
@@ -23,9 +36,45 @@ export class Scanner {
       minConfidence: 0.5,
       includeContext: true,
       contextLines: 2,
+      allowlist: [],
+      denylist: [],
       ...config,
     }
     this.patterns = this.loadPatterns()
+  }
+
+  private createScanState(options: ScanOptions = {}) {
+    const startTimeMs = Date.now()
+    const timeoutMs = options.timeoutMs
+    const deadlineMs = typeof timeoutMs === 'number' ? startTimeMs + timeoutMs : undefined
+
+    return {
+      startTimeMs,
+      deadlineMs,
+      signal: options.signal,
+      allowlist: options.allowlist ?? this.config.allowlist ?? [],
+      denylist: options.denylist ?? this.config.denylist ?? [],
+    }
+  }
+
+  private checkAbort(state: ReturnType<Scanner['createScanState']>): void {
+    if (state.signal?.aborted) {
+      throw new ScanAbortedError('Scan aborted')
+    }
+    if (typeof state.deadlineMs === 'number' && Date.now() > state.deadlineMs) {
+      throw new ScanAbortedError('Scan timed out')
+    }
+  }
+
+  private matchesList(value: string, list: Array<string | RegExp>): boolean {
+    for (const entry of list) {
+      if (typeof entry === 'string') {
+        if (entry === value) return true
+      } else if (entry.test(value)) {
+        return true
+      }
+    }
+    return false
   }
 
   private loadPatterns(): PatternDefinition[] {
@@ -37,7 +86,7 @@ export class Scanner {
       for (const p of this.config.patterns) {
         if (p in patternCategories) {
           const categoryPatterns = defaultPatterns.filter((dp) =>
-            patternCategories[p as keyof typeof patternCategories].includes(dp.id)
+            patternCategories[p as keyof typeof patternCategories].includes(dp.id),
           )
           patterns.push(...categoryPatterns)
         } else {
@@ -87,34 +136,18 @@ export class Scanner {
   /**
    * Synchronous scan - validates patterns inline
    */
-  scan(text: string): Finding[] {
-    const findings: Finding[] = []
-    const lines = text.split('\n')
-
-    for (const pattern of this.patterns) {
-      const matches = this.findMatches(text, pattern, lines)
-
-      for (const match of matches) {
-        if (match.confidence >= this.config.minConfidence) {
-          findings.push(this.createFinding(match, text, lines))
-        }
-      }
-    }
-
-    // Sort by line number, then by column
-    return findings.sort((a, b) => {
-      if (a.line !== b.line) return (a.line ?? 0) - (b.line ?? 0)
-      return (a.column ?? 0) - (b.column ?? 0)
-    })
+  scan(text: string, options: ScanOptions = {}): Finding[] {
+    const state = this.createScanState(options)
+    return this.scanInternal(text, state)
   }
 
   /**
    * Full scan with metadata
    */
-  scanWithMetadata(text: string): ScanResult {
-    const startTime = performance.now()
-    const findings = this.scan(text)
-    const endTime = performance.now()
+  scanWithMetadata(text: string, options: ScanOptions = {}): ScanResult {
+    const startTime = Date.now()
+    const findings = this.scan(text, options)
+    const endTime = Date.now()
 
     return {
       findings,
@@ -127,20 +160,96 @@ export class Scanner {
   /**
    * Async scan - useful for large texts or expensive validators
    */
-  async scanAsync(text: string): Promise<Finding[]> {
+  async scanAsync(text: string, options: ScanOptions = {}): Promise<Finding[]> {
     // For now, just wrap sync scan
     // In future, could chunk large texts or run validators in parallel
     return new Promise((resolve) => {
-      setImmediate(() => {
-        resolve(this.scan(text))
+      const schedule =
+        typeof (globalThis as { setImmediate?: (cb: () => void) => void }).setImmediate ===
+        'function'
+          ? (globalThis as { setImmediate: (cb: () => void) => void }).setImmediate
+          : (cb: () => void) => setTimeout(cb, 0)
+
+      schedule(() => {
+        resolve(this.scan(text, options))
       })
+    })
+  }
+
+  /**
+   * Chunked scan - useful for very large texts
+   */
+  scanChunks(text: string, options: ScanOptions = {}): Finding[] {
+    const chunkSize = options.chunkSize ?? 200_000
+    const overlap = options.overlap ?? 200
+    const state = this.createScanState(options)
+
+    if (chunkSize <= 0) {
+      throw new Error('chunkSize must be greater than 0')
+    }
+    if (overlap < 0) {
+      throw new Error('overlap must be >= 0')
+    }
+
+    const findings: Finding[] = []
+    const seen = new Set<string>()
+
+    for (let start = 0; start < text.length; start += chunkSize - overlap) {
+      this.checkAbort(state)
+      const end = Math.min(text.length, start + chunkSize)
+      const chunkText = text.slice(start, end)
+      const baseLineInfo = this.getLineInfo(text, start)
+      const chunkFindings = this.scanInternal(chunkText, state)
+
+      for (const finding of chunkFindings) {
+        const adjusted = this.adjustFindingOffsets(
+          finding,
+          start,
+          baseLineInfo.line,
+          baseLineInfo.column,
+        )
+        const key = `${adjusted.patternId}:${adjusted.start}:${adjusted.end}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        findings.push(adjusted)
+      }
+
+      if (end === text.length) break
+    }
+
+    return findings.sort((a, b) => {
+      if (a.line !== b.line) return (a.line ?? 0) - (b.line ?? 0)
+      return (a.column ?? 0) - (b.column ?? 0)
+    })
+  }
+
+  private scanInternal(text: string, state: ReturnType<Scanner['createScanState']>): Finding[] {
+    const findings: Finding[] = []
+    const lines = text.split('\n')
+
+    for (const pattern of this.patterns) {
+      this.checkAbort(state)
+      const matches = this.findMatches(text, pattern, lines, state)
+
+      for (const match of matches) {
+        this.checkAbort(state)
+        if (match.confidence >= this.config.minConfidence) {
+          findings.push(this.createFinding(match, text, lines))
+        }
+      }
+    }
+
+    return findings.sort((a, b) => {
+      if (a.line !== b.line) return (a.line ?? 0) - (b.line ?? 0)
+      return (a.column ?? 0) - (b.column ?? 0)
     })
   }
 
   private findMatches(
     text: string,
     pattern: PatternDefinition,
-    lines: string[]
+    lines: string[],
+    state: ReturnType<Scanner['createScanState']>,
   ): PatternMatch[] {
     const matches: PatternMatch[] = []
     const regex =
@@ -150,10 +259,17 @@ export class Scanner {
 
     let match: RegExpExecArray | null
     while ((match = regex.exec(text)) !== null) {
+      this.checkAbort(state)
       // Check for false positives
       if (this.isFalsePositive(match[0], pattern)) {
         continue
       }
+
+      if (this.matchesList(match[0], state.allowlist)) {
+        continue
+      }
+
+      const forcedInclude = this.matchesList(match[0], state.denylist)
 
       // Get context for confidence calculation
       const lineInfo = this.getLineInfo(text, match.index)
@@ -166,11 +282,11 @@ export class Scanner {
         match[0],
         pattern.validators ?? [],
         pattern.keywords,
-        context
+        context,
       )
 
       // Run validators
-      if (pattern.validators && pattern.validators.length > 0) {
+      if (!forcedInclude && pattern.validators && pattern.validators.length > 0) {
         if (!runValidators(pattern.validators, match[0])) {
           continue
         }
@@ -179,7 +295,7 @@ export class Scanner {
       matches.push({
         pattern,
         match,
-        confidence,
+        confidence: forcedInclude ? Math.max(confidence, this.config.minConfidence) : confidence,
       })
 
       // Prevent infinite loops with zero-width matches
@@ -202,14 +318,12 @@ export class Scanner {
     return false
   }
 
-  private getLineInfo(
-    text: string,
-    index: number
-  ): { line: number; column: number } {
+  private getLineInfo(text: string, index: number): { line: number; column: number } {
     const beforeMatch = text.substring(0, index)
     const lines = beforeMatch.split('\n')
     const line = lines.length
-    const column = lines[lines.length - 1].length + 1
+    const lastLine = lines[lines.length - 1] ?? ''
+    const column = lastLine.length + 1
     return { line, column }
   }
 
@@ -221,20 +335,49 @@ export class Scanner {
 
   private createFinding(match: PatternMatch, text: string, lines: string[]): Finding {
     const lineInfo = this.getLineInfo(text, match.match.index!)
+    const start = match.match.index!
+    const end = start + match.match[0].length
 
-    return {
+    const finding: Finding = {
       patternId: match.pattern.id,
       patternName: match.pattern.name,
       severity: match.pattern.severity,
       match: match.match[0],
       redacted: redactMatch(match.match[0]),
+      start,
+      end,
       line: lineInfo.line,
       column: lineInfo.column,
-      context: this.config.includeContext
-        ? this.getContext(lines, lineInfo.line, this.config.contextLines)
-        : undefined,
       confidence: Math.round(match.confidence * 100) / 100,
     }
+
+    if (this.config.includeContext) {
+      finding.context = this.getContext(lines, lineInfo.line, this.config.contextLines)
+    }
+
+    return finding
+  }
+
+  private adjustFindingOffsets(
+    finding: Finding,
+    offset: number,
+    baseLine: number,
+    baseColumn: number,
+  ): Finding {
+    const adjusted: Finding = {
+      ...finding,
+      start: finding.start + offset,
+      end: finding.end + offset,
+    }
+
+    if (finding.line !== undefined) {
+      adjusted.line = baseLine + finding.line - 1
+      if (finding.line === 1 && finding.column !== undefined) {
+        adjusted.column = baseColumn + finding.column - 1
+      }
+    }
+
+    return adjusted
   }
 
   /**
