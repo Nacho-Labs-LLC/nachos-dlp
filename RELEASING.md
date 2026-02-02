@@ -62,7 +62,27 @@ npm run publish:npm
 
 ## After Publishing
 
-1. **Push Tags**: Don't forget to push the version commit and tags to GitHub:
+### When Using Combined Release Scripts (Option 1)
+
+The combined scripts (`release:patch`, `release:minor`, `release:major`) handle versioning, committing, and publishing. After they complete:
+
+1. **Push Tags**: Push the version commit and tags to GitHub:
+   ```bash
+   git push origin main --follow-tags
+   ```
+
+2. **Verify**: Check that the package is available on npm:
+   ```bash
+   npm view @nacho-labs/nachos-dlp
+   ```
+
+3. **Create GitHub Release** (optional): Go to GitHub and create a release from the new tag with release notes.
+
+### When Using Manual Step-by-Step (Option 2)
+
+After manually publishing with `npm run publish:npm`:
+
+1. **Push Tags**: Push the version commit and tags to GitHub (if not already done):
    ```bash
    git push origin main --follow-tags
    ```
