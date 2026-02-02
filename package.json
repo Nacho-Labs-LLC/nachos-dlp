@@ -1,5 +1,5 @@
 {
-  "name": "@nachos/dlp",
+  "name": "@nacho-labs/nachos-dlp",
   "version": "0.0.1",
   "description": "TypeScript DLP scanning library for detecting secrets and sensitive data",
   "type": "module",
@@ -35,7 +35,7 @@
     "credentials",
     "detection"
   ],
-  "author": "",
+  "author": "Nate Richardson <hello@naterichardson.com> (https://naterichardson.com)",
   "license": "MIT",
   "repository": {
     "type": "git",

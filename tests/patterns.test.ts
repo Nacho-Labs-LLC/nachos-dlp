@@ -123,56 +123,55 @@ describe('API Key Pattern Detection', () => {
     expect(findings.some((f) => f.patternId === 'github-oauth')).toBe(true)
   })
 
-  it('should detect Stripe secret key pattern', () => {
-    // Test pattern matching only - using scanner.getPattern to verify pattern exists
-    const pattern = scanner.getPattern('stripe-secret-key')
-    expect(pattern).toBeDefined()
-    expect(pattern?.pattern).toBeDefined()
+  it('should detect Stripe secret key', () => {
+    const findings = scanner.scan('sk_live_1234567890abcdefghijklmn')
+    expect(findings.some((f) => f.patternId === 'stripe-secret-key')).toBe(true)
   })
 
-  it('should detect Slack bot token pattern', () => {
-    // Test pattern matching only - using scanner.getPattern to verify pattern exists
-    const pattern = scanner.getPattern('slack-bot-token')
-    expect(pattern).toBeDefined()
-    expect(pattern?.pattern).toBeDefined()
+  it('should detect Stripe test key', () => {
+    const findings = scanner.scan('sk_test_abcdefghijklmnopqrstuvwx')
+    expect(findings.some((f) => f.patternId === 'stripe-secret-key')).toBe(true)
   })
 
-  it('should detect Slack webhook pattern', () => {
-    // Test pattern matching only - using scanner.getPattern to verify pattern exists
-    const pattern = scanner.getPattern('slack-webhook')
-    expect(pattern).toBeDefined()
-    expect(pattern?.pattern).toBeDefined()
+  it('should detect Slack bot token', () => {
+    const findings = scanner.scan('xoxb-1234567890-1234567890123-abcdefghijklmnopqrstuvwx')
+    expect(findings.some((f) => f.patternId === 'slack-bot-token')).toBe(true)
   })
 
-  it('should detect SendGrid API key pattern', () => {
-    // Test pattern exists - actual values trigger GitHub secret scanning
-    const pattern = scanner.getPattern('sendgrid-api-key')
-    expect(pattern).toBeDefined()
-    expect(pattern?.pattern).toBeDefined()
+  it('should detect Slack webhook URL', () => {
+    const findings = scanner.scan(
+      'https://hooks.slack.com/services/T12345678/B12345678/abcdefghijklmnopqrstuvwx'
+    )
+    expect(findings.some((f) => f.patternId === 'slack-webhook')).toBe(true)
   })
 
-  it('should detect Discord webhook pattern', () => {
-    const pattern = scanner.getPattern('discord-webhook')
-    expect(pattern).toBeDefined()
-    expect(pattern?.pattern).toBeDefined()
+  it('should detect SendGrid API key', () => {
+    const findings = scanner.scan(
+      'SG.1234567890abcdefghijkl.1234567890abcdefghijklmnopqrstuvwxyz1234567'
+    )
+    expect(findings.some((f) => f.patternId === 'sendgrid-api-key')).toBe(true)
   })
 
-  it('should detect NPM token pattern', () => {
-    const pattern = scanner.getPattern('npm-token')
-    expect(pattern).toBeDefined()
-    expect(pattern?.pattern).toBeDefined()
+  it('should detect Discord webhook', () => {
+    const findings = scanner.scan('https://discord.com/api/webhooks/1234567890/abcdef-123456')
+    expect(findings.some((f) => f.patternId === 'discord-webhook')).toBe(true)
   })
 
-  it('should detect JWT token pattern', () => {
-    const pattern = scanner.getPattern('jwt-token')
-    expect(pattern).toBeDefined()
-    expect(pattern?.pattern).toBeDefined()
+  it('should detect NPM token', () => {
+    const findings = scanner.scan('npm_1234567890abcdefghijklmnopqrstuvwxyz')
+    expect(findings.some((f) => f.patternId === 'npm-token')).toBe(true)
   })
 
-  it('should detect Bearer token pattern', () => {
-    const pattern = scanner.getPattern('bearer-token')
-    expect(pattern).toBeDefined()
-    expect(pattern?.pattern).toBeDefined()
+  it('should detect JWT token', () => {
+    const jwt =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U'
+    const findings = scanner.scan(jwt)
+    expect(findings.some((f) => f.patternId === 'jwt-token')).toBe(true)
+  })
+
+  it('should detect Bearer token', () => {
+    const findings = scanner.scan('Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9')
+    expect(findings.some((f) => f.patternId === 'bearer-token')).toBe(true)
   })
 })
 
@@ -232,7 +231,6 @@ describe('PII Pattern Detection', () => {
   const scanner = new Scanner({ patterns: ['pii'] })
 
   it('should detect US SSN', () => {
-    // Using a realistic SSN format (not in false positives list)
     const findings = scanner.scan('SSN: 234-56-7890')
     expect(findings.some((f) => f.patternId === 'ssn-us')).toBe(true)
   })
@@ -258,13 +256,11 @@ describe('PII Pattern Detection', () => {
   })
 
   it('should detect email address', () => {
-    // Using a domain not in false positives list (not example.com, test.com, localhost)
     const findings = scanner.scan('Contact: user@company.org')
     expect(findings.some((f) => f.patternId === 'email-address')).toBe(true)
   })
 
   it('should detect US phone number', () => {
-    // US phone numbers need area code [2-9]XX and exchange [2-9]XX
     const findings = scanner.scan('Phone: (555) 234-5678')
     expect(findings.some((f) => f.patternId === 'phone-us')).toBe(true)
   })
