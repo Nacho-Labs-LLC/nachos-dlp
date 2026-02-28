@@ -1,0 +1,96 @@
+import type { PatternDefinition } from '../types.js'
+
+export const azurePatterns: PatternDefinition[] = [
+  {
+    id: 'azure-storage-key',
+    name: 'Azure Storage Account Key',
+    description: 'Microsoft Azure storage account access key',
+    severity: 'critical',
+    pattern: /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{86}==(?![A-Za-z0-9/+=])/g,
+    keywords: ['azure', 'storage', 'account', 'key', 'microsoft'],
+    validators: [{ type: 'entropy', min: 5.0 }],
+    examples: {
+      positive: [],
+      negative: [],
+    },
+  },
+  {
+    id: 'azure-connection-string',
+    name: 'Azure Connection String',
+    description: 'Azure service connection string',
+    severity: 'critical',
+    pattern: /DefaultEndpointsProtocol=https?;AccountName=[^;]+;AccountKey=[A-Za-z0-9/+=]+;?/gi,
+    keywords: ['azure', 'connection', 'string', 'endpoint'],
+    validators: [],
+    examples: {
+      positive: ['DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=abc123=='],
+      negative: [],
+    },
+  },
+  {
+    id: 'azure-client-secret',
+    name: 'Azure AD Client Secret',
+    description: 'Azure Active Directory application client secret',
+    severity: 'critical',
+    pattern: /[a-zA-Z0-9~_.-]{34,40}/g,
+    keywords: ['azure', 'client', 'secret', 'ad', 'active', 'directory'],
+    validators: [{ type: 'entropy', min: 4.5 }],
+    falsePositives: [/^[a-z]+$/i, /^[0-9]+$/],
+    examples: {
+      positive: [],
+      negative: [],
+    },
+  },
+  {
+    id: 'azure-sas-token',
+    name: 'Azure SAS Token',
+    description: 'Azure Shared Access Signature token',
+    severity: 'high',
+    pattern: /[?&]sig=[A-Za-z0-9%]+(&|$)/g,
+    keywords: ['azure', 'sas', 'signature', 'token', 'blob'],
+    validators: [],
+    examples: {
+      positive: ['?sv=2020-08-04&sig=abc123%3D'],
+      negative: [],
+    },
+  },
+  {
+    id: 'azure-subscription-key',
+    name: 'Azure Subscription Key',
+    description: 'Azure Cognitive Services or API Management subscription key',
+    severity: 'high',
+    pattern: /(?:Ocp-Apim-Subscription-Key|api-key)\s*[:=]\s*["']?[a-f0-9]{32}["']?/gi,
+    keywords: ['azure', 'subscription', 'key', 'cognitive', 'apim'],
+    validators: [],
+    examples: {
+      positive: ['Ocp-Apim-Subscription-Key: abcdef1234567890abcdef1234567890'],
+      negative: [],
+    },
+  },
+  {
+    id: 'azure-ad-token',
+    name: 'Azure AD Bearer Token',
+    description: 'Azure Active Directory JWT bearer token',
+    severity: 'high',
+    pattern: /eyJ0eXAiOiJKV1Qi[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*/g,
+    keywords: ['azure', 'ad', 'bearer', 'jwt', 'token', 'active', 'directory'],
+    validators: [{ type: 'entropy', min: 4.0 }],
+    examples: {
+      positive: [],
+      negative: [],
+    },
+  },
+  {
+    id: 'azure-cosmos-key',
+    name: 'Azure Cosmos DB Key',
+    description: 'Azure Cosmos DB primary or secondary key',
+    severity: 'critical',
+    pattern: /AccountEndpoint=https:\/\/[^;]+;AccountKey=[A-Za-z0-9/+=]{86}==/gi,
+    keywords: ['cosmos', 'cosmosdb', 'azure', 'database', 'key'],
+    validators: [],
+    examples: {
+      positive: [],
+      negative: [],
+    },
+  },
+]

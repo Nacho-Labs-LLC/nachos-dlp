@@ -3,12 +3,18 @@ import { awsPatterns } from './aws.js'
 import { apiKeyPatterns } from './api-keys.js'
 import { privateKeyPatterns } from './private-keys.js'
 import { piiPatterns } from './pii.js'
+import { gcpPatterns } from './gcp.js'
+import { azurePatterns } from './azure.js'
+import { chatPlatformPatterns } from './chat-platforms.js'
 
 // Re-export individual pattern collections
 export { awsPatterns } from './aws.js'
 export { apiKeyPatterns } from './api-keys.js'
 export { privateKeyPatterns } from './private-keys.js'
 export { piiPatterns } from './pii.js'
+export { gcpPatterns } from './gcp.js'
+export { azurePatterns } from './azure.js'
+export { chatPlatformPatterns } from './chat-platforms.js'
 
 // Combined default patterns
 export const patterns: PatternDefinition[] = [
@@ -16,19 +22,32 @@ export const patterns: PatternDefinition[] = [
   ...apiKeyPatterns,
   ...privateKeyPatterns,
   ...piiPatterns,
+  ...gcpPatterns,
+  ...azurePatterns,
+  ...chatPlatformPatterns,
 ]
 
 // Pattern categories for filtering
 export const patternCategories = {
   aws: awsPatterns.map((p) => p.id),
-  cloud: [...awsPatterns.map((p) => p.id)],
+  gcp: gcpPatterns.map((p) => p.id),
+  azure: azurePatterns.map((p) => p.id),
+  cloud: [
+    ...awsPatterns.map((p) => p.id),
+    ...gcpPatterns.map((p) => p.id),
+    ...azurePatterns.map((p) => p.id),
+  ],
   'api-keys': apiKeyPatterns.map((p) => p.id),
   'private-keys': privateKeyPatterns.map((p) => p.id),
   pii: piiPatterns.map((p) => p.id),
+  'chat-platforms': chatPlatformPatterns.map((p) => p.id),
   secrets: [
     ...awsPatterns.map((p) => p.id),
+    ...gcpPatterns.map((p) => p.id),
+    ...azurePatterns.map((p) => p.id),
     ...apiKeyPatterns.map((p) => p.id),
     ...privateKeyPatterns.map((p) => p.id),
+    ...chatPlatformPatterns.map((p) => p.id),
   ],
   all: patterns.map((p) => p.id),
 } as const
