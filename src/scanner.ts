@@ -8,7 +8,7 @@ import type {
 import { patterns as defaultPatterns, patternCategories } from './patterns/index.js'
 import { runValidators, calculateConfidence } from './validators/index.js'
 import { redactMatch } from './utils/redact.js'
-import { loadPatternsFromYAML } from './utils/yaml-loader.js'
+
 
 export interface ScanResult {
   findings: Finding[]
@@ -111,18 +111,8 @@ export class Scanner {
       patterns.push(...this.config.customPatterns)
     }
 
-    // Load patterns from YAML files
-    if (this.config.customPatternFiles && this.config.customPatternFiles.length > 0) {
-      for (const file of this.config.customPatternFiles) {
-        try {
-          const yamlPatterns = loadPatternsFromYAML(file)
-          patterns.push(...yamlPatterns)
-        } catch (error) {
-          console.error(`Failed to load patterns from ${file}:`, error)
-          // Continue loading other files
-        }
-      }
-    }
+    // Subclass extension hook
+    patterns.push(...this.getAdditionalPatterns())
 
     // Deduplicate by ID
     const seen = new Set<string>()
@@ -418,8 +408,23 @@ export class Scanner {
   updateConfig(config: Partial<ScannerConfig>): void {
     this.config = { ...this.config, ...config }
     if (config.patterns || config.exclude || config.customPatterns) {
-      this.patterns = this.loadPatterns()
+      this.reloadPatterns()
     }
+  }
+
+  /**
+   * Reload patterns from current config and subclass hooks.
+   * Subclasses should call this after mutating config that affects pattern loading.
+   */
+  protected reloadPatterns(): void {
+    this.patterns = this.loadPatterns()
+  }
+
+  /**
+   * Override in subclasses to inject additional patterns (e.g. from YAML files).
+   */
+  protected getAdditionalPatterns(): PatternDefinition[] {
+    return []
   }
 
   /**
