@@ -36,12 +36,8 @@ export {
   type RedactOptions,
 } from './utils/redact.js'
 
-// YAML pattern loading
-export {
-  loadPatternsFromYAML,
-  loadPatternsFromYAMLString,
-  exportPatternsToYAML,
-} from './utils/yaml-loader.js'
+// Portable YAML utilities (no Node.js fs dependency)
+export { loadPatternsFromYAMLString, exportPatternsToYAML } from './utils/yaml-shared.js'
 
 // Validators
 export {

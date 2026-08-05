@@ -298,8 +298,8 @@ patterns:
       const filePath = join(TEST_DIR, 'custom-patterns.yaml')
       writeFileSync(filePath, yaml, 'utf-8')
 
-      const { Scanner } = await import('../src/scanner.js')
-      const scanner = new Scanner({
+      const { NodeScanner } = await import('../src/node/scanner.js')
+      const scanner = new NodeScanner({
         patterns: [], // No default patterns
         customPatternFiles: [filePath],
       })

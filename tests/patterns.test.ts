@@ -5,6 +5,9 @@ import {
   apiKeyPatterns,
   privateKeyPatterns,
   piiPatterns,
+  gcpPatterns,
+  azurePatterns,
+  chatPlatformPatterns,
   getPatternById,
   getPatternsByCategory,
   getPatternsBySeverity,
@@ -34,7 +37,13 @@ describe('Pattern collections', () => {
 
   it('should combine all patterns', () => {
     const totalPatterns =
-      awsPatterns.length + apiKeyPatterns.length + privateKeyPatterns.length + piiPatterns.length
+      awsPatterns.length +
+      apiKeyPatterns.length +
+      privateKeyPatterns.length +
+      piiPatterns.length +
+      gcpPatterns.length +
+      azurePatterns.length +
+      chatPlatformPatterns.length
     expect(patterns.length).toBe(totalPatterns)
   })
 })
@@ -66,7 +75,12 @@ describe('getPatternsByCategory', () => {
   it('should return secrets patterns (aws + api-keys + private-keys)', () => {
     const secretPatterns = getPatternsByCategory('secrets')
     expect(secretPatterns.length).toBe(
-      awsPatterns.length + apiKeyPatterns.length + privateKeyPatterns.length,
+      awsPatterns.length +
+        gcpPatterns.length +
+        azurePatterns.length +
+        apiKeyPatterns.length +
+        privateKeyPatterns.length +
+        chatPlatformPatterns.length,
     )
   })
 })
@@ -100,12 +114,14 @@ describe('AWS Pattern Detection', () => {
   })
 
   it('should detect GCP API key', () => {
-    const findings = scanner.scan('AIzaSyDaGmWKa4JsXZ-HjGw7ISLn_3namBGewQe')
+    const gcpScanner = new Scanner({ patterns: ['gcp'] })
+    const findings = gcpScanner.scan('AIzaSyDaGmWKa4JsXZ-HjGw7ISLn_3namBGewQe')
     expect(findings.some((f) => f.patternId === 'gcp-api-key')).toBe(true)
   })
 
   it('should detect Google OAuth token', () => {
-    const findings = scanner.scan('ya29.a0AfB_byC1234567890abcdefghijklmnop')
+    const gcpScanner = new Scanner({ patterns: ['gcp'] })
+    const findings = gcpScanner.scan('ya29.a0AfB_byC1234567890abcdefghijklmnop')
     expect(findings.some((f) => f.patternId === 'gcp-oauth-token')).toBe(true)
   })
 })
