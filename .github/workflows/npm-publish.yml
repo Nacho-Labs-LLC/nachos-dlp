@@ -1,0 +1,43 @@
+name: Publish npm package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to publish (for example, v2.0.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.event.release.tag_name }}
+
+jobs:
+  publish:
+    name: Publish @nacho-labs/nachos-dlp
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - name: Verify release tag matches package version
+        run: |
+          actual_tag="v$(node -p "require('./package.json').version")"
+          test "$RELEASE_TAG" = "$actual_tag"
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run test:coverage
+      - run: npm pack --dry-run
+      - run: npm publish --provenance --access public

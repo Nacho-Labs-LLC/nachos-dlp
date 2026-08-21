@@ -13,7 +13,9 @@ export function loadPatternsFromYAML(filePath: string): PatternDefinition[] {
     return loadPatternsFromYAMLString(readFileSync(filePath, 'utf-8'))
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(`Failed to load patterns from ${filePath}: ${error.message}`)
+      throw new Error(`Failed to load patterns from ${filePath}: ${error.message}`, {
+        cause: error,
+      })
     }
     throw error
   }
