@@ -38,7 +38,7 @@ export function loadPatternsFromYAMLString(yamlString: string): PatternDefinitio
     return data.patterns.map((p) => convertYAMLPattern(p))
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(`Failed to parse YAML patterns: ${error.message}`)
+      throw new Error(`Failed to parse YAML patterns: ${error.message}`, { cause: error })
     }
     throw error
   }
@@ -70,6 +70,7 @@ function convertYAMLPattern(yamlPattern: YAMLPattern): PatternDefinition {
   } catch (error) {
     throw new Error(
       `Pattern ${yamlPattern.id} has invalid regex: ${error instanceof Error ? error.message : 'unknown error'}`,
+      { cause: error },
     )
   }
 
